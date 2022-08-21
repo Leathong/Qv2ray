@@ -135,7 +135,7 @@ namespace Qv2ray::core::kernel
         proc.setNativeArguments("--version");
         proc.start();
 #else
-        proc.start(corePath, { "--version" });
+        proc.start(corePath, {"version" });
 #endif
         proc.waitForStarted();
         proc.waitForFinished();
@@ -168,14 +168,19 @@ namespace Qv2ray::core::kernel
             QProcess process;
             process.setProcessEnvironment(env);
             DEBUG("Starting V2Ray core with test options");
-            process.start(kernelPath, { "-test", "-config", path }, QIODevice::ReadWrite | QIODevice::Text);
+            if (kernelPath.endsWith("xray")) {
+                process.start(kernelPath, { "run", "-test", "-config", path }, QIODevice::ReadWrite | QIODevice::Text);
+            } else {
+                process.start(kernelPath, { "test", "-config", path }, QIODevice::ReadWrite | QIODevice::Text);
+            }
+            
             process.waitForFinished();
 
             if (process.exitCode() != 0)
             {
                 QString output = QString(process.readAllStandardOutput());
                 QvMessageBoxWarn(nullptr, tr("Configuration Error"), output.mid(output.indexOf("anti-censorship.") + 17));
-                return std::nullopt;
+                return tr("test faild");
             }
 
             DEBUG("Config file check passed.");
@@ -232,7 +237,7 @@ namespace Qv2ray::core::kernel
         env.insert("v2ray.location.asset", GlobalConfig.kernelConfig.AssetsPath());
         env.insert("XRAY_LOCATION_ASSET", GlobalConfig.kernelConfig.AssetsPath());
         vProcess->setProcessEnvironment(env);
-        vProcess->start(GlobalConfig.kernelConfig.KernelPath(), { "-config", filePath }, QIODevice::ReadWrite | QIODevice::Text);
+        vProcess->start(GlobalConfig.kernelConfig.KernelPath(), { "run", "-config", filePath }, QIODevice::ReadWrite | QIODevice::Text);
         vProcess->waitForStarted();
         kernelStarted = true;
 
